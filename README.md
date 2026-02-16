@@ -123,16 +123,6 @@ Matrix B:
 
 ---
 
-##  Project Structure
-
-```
-matrix-arm/
-│── code.s
-│── README.md
-```
-
----
-
 ##  Working Principle
 
 ### Step 1 — Data Initialization
