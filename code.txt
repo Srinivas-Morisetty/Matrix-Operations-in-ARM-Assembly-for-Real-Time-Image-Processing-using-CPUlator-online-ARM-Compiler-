@@ -1,0 +1,125 @@
+.text
+        .global _start
+
+_start:
+        // ===== MATRIX ADDITION =====
+        LDR     r0, =matrixA        // r0 points to matrix A
+        LDR     r1, =matrixB        // r1 points to matrix B
+        LDR     r2, =resultAdd      // r2 points to addition result
+        MOV     r3, #9              // r3 = counter (9 elements)
+
+add_loop:
+        LDR     r4, [r0], #4        // Load element from A
+        LDR     r5, [r1], #4        // Load element from B
+        ADD     r6, r4, r5          // Add: r6 = r4 + r5
+        STR     r6, [r2], #4        // Store result
+        SUBS    r3, r3, #1          // Decrement counter
+        BNE     add_loop            // Continue if not zero
+
+        // ===== MATRIX SUBTRACTION =====
+        LDR     r0, =matrixA        // Reset pointer to matrix A
+        LDR     r1, =matrixB        // Reset pointer to matrix B
+        LDR     r2, =resultSub      // r2 points to subtraction result
+        MOV     r3, #9              // Reset counter
+
+sub_loop:
+        LDR     r4, [r0], #4        // Load element from A
+        LDR     r5, [r1], #4        // Load element from B
+        SUB     r6, r4, r5          // Subtract: r6 = r4 - r5
+        STR     r6, [r2], #4        // Store result
+        SUBS    r3, r3, #1          // Decrement counter
+        BNE     sub_loop            // Continue if not zero
+
+        // ===== MATRIX MULTIPLICATION =====
+        // Multiply two 3x3 matrices: C[i][j] = sum(A[i][k] * B[k][j])
+        LDR     r0, =matrixA        // r0 = base address of matrix A
+        LDR     r1, =matrixB        // r1 = base address of matrix B
+        LDR     r2, =resultMul      // r2 = base address of result
+        MOV     r3, #0              // r3 = i (row index for A)
+
+mul_outer:
+        MOV     r4, #0              // r4 = j (column index for B)
+
+mul_middle:
+        MOV     r5, #0              // r5 = k (sum index)
+        MOV     r6, #0              // r6 = accumulator for C[i][j]
+
+mul_inner:
+        // Calculate A[i][k]: address = A + (i*3 + k)*4
+        MOV     r7, r3              // r7 = i
+        MOV     r8, #3
+        MUL     r7, r7, r8          // r7 = i * 3
+        ADD     r7, r7, r5          // r7 = i*3 + k
+        LSL     r7, r7, #2          // r7 = (i*3 + k) * 4 (byte offset)
+        LDR     r8, [r0, r7]        // r8 = A[i][k]
+
+        // Calculate B[k][j]: address = B + (k*3 + j)*4
+        MOV     r7, r5              // r7 = k
+        MOV     r9, #3
+        MUL     r7, r7, r9          // r7 = k * 3
+        ADD     r7, r7, r4          // r7 = k*3 + j
+        LSL     r7, r7, #2          // r7 = (k*3 + j) * 4
+        LDR     r9, [r1, r7]        // r9 = B[k][j]
+
+        // Multiply and accumulate
+        MUL     r8, r8, r9          // r8 = A[i][k] * B[k][j]
+        ADD     r6, r6, r8          // r6 += A[i][k] * B[k][j]
+
+        // Increment k and check if k < 3
+        ADD     r5, r5, #1
+        CMP     r5, #3
+        BLT     mul_inner
+
+        // Store C[i][j]: address = C + (i*3 + j)*4
+        MOV     r7, r3              // r7 = i
+        MOV     r8, #3
+        MUL     r7, r7, r8          // r7 = i * 3
+        ADD     r7, r7, r4          // r7 = i*3 + j
+        LSL     r7, r7, #2          // r7 = (i*3 + j) * 4
+        STR     r6, [r2, r7]        // Store result
+
+        // Increment j and check if j < 3
+        ADD     r4, r4, #1
+        CMP     r4, #3
+        BLT     mul_middle
+
+        // Increment i and check if i < 3
+        ADD     r3, r3, #1
+        CMP     r3, #3
+        BLT     mul_outer
+
+end:
+        B       end                 // Infinite loop to stop
+
+        .data
+        .align 2
+
+// Matrix A (3x3)
+matrixA:
+        .word   1, 2, 3
+        .word   4, 5, 6
+        .word   7, 8, 9
+
+// Matrix B (3x3)
+matrixB:
+        .word   9, 8, 7
+        .word   6, 5, 4
+        .word   3, 2, 1
+
+// Result matrix for Addition
+resultAdd:
+        .word   0, 0, 0
+        .word   0, 0, 0
+        .word   0, 0, 0
+
+// Result matrix for Subtraction
+resultSub:
+        .word   0, 0, 0
+        .word   0, 0, 0
+        .word   0, 0, 0
+
+// Result matrix for Multiplication
+resultMul:
+        .word   0, 0, 0
+        .word   0, 0, 0
+        .word   0, 0, 0
